@@ -39,7 +39,7 @@ async function main() {
 
         // // Get a block blob client
         // const blockBlobClient = containerClient.getBlockBlobClient(blobName);
-
+4
         // // Display blob name and url
         // console.log(
         //     `\nUploading to Azure storage as blob\n\tname: ${blobName}:\n\tURL: ${blockBlobClient.url}`

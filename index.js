@@ -10,11 +10,35 @@ const port = process.env.PORT || 3000;
 
 // Azure Blob Storage configuration
 const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
-const containerName = 'azurepicture'
-const blobName = "test"
+const containerName = 'profilepics'
+const blobName = "Ade"
 
 const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
 const containerClient = blobServiceClient.getContainerClient(containerName);
+
+const checkIfContainerExists = async () => {
+    try {
+        const containerExists = await containerClient.exists();
+
+        if (containerExists) {
+            console.log(`Container "${containerName}" already exists.`);
+        } else {
+            // Create the container
+            const createContainerResponse = await containerClient.create();
+            console.log(`Container "${containerName}" was created successfully.`);
+            console.log(`\trequestId: ${createContainerResponse.requestId}`);
+            console.log(`\tURL: ${containerClient.url}`);
+            // Set the container's access policy to allow public access to blobs
+            await containerClient.setAccessPolicy('blob');
+            console.log(`Container ${containerName} access level set to 'blob'`);
+
+        }
+    } catch (error) {
+        console.log(error)
+    }
+}
+
+checkIfContainerExists()
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
@@ -34,13 +58,22 @@ app.post('/upload', upload.single('file'), async (req, res) => {
 
         // Upload the stream to Azure Blob Storage
         await blockBlobClient.uploadStream(stream, req.file.size, undefined, uploadOptions);
+        console.log('File uploaded successfully to Azure Blob Storage.');
 
-        res.send('File uploaded successfully to Azure Blob Storage.');
+        // Get a reference to the blob (image)
+        const blobClient = containerClient.getBlobClient(blobName);
+
+        // Construct the URL
+        const blobUrl = blobClient.url;
+
+        console.log(`URL for the image: ${blobUrl}`);
     } catch (error) {
         console.error('Error uploading to Azure Blob Storage:', error);
         res.status(500).send('Error uploading file.');
     }
 });
+
+
 
 app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);
